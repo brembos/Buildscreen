@@ -16,6 +16,9 @@
             <p>
                 by <span>{{build.RequestedByName | titleFilter:20}}</span>
             </p>
+            <p>
+                Tests <span>{{build.PassedNumberOfTests | titleFilter:20}} passed, {{build.TotalNumberOfTests | titleFilter:20}} total</span>
+            </p>
         </div>
         <!--<input type="text" ng-model="build.Status"/>-->
         <div ng-switch="build.Status">

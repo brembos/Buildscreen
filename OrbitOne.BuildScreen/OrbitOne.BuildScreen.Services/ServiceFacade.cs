@@ -22,7 +22,7 @@ namespace OrbitOne.BuildScreen.Services
             {
                 if (dateString == null)
                 {
-                    Debug.WriteLine("Lege datum, getbuildinfodtos");
+                    LogService.WriteInfo("Lege datum, getbuildinfodtos");
                     Parallel.ForEach(_services, service => allBuilds.AddRange(service.GetBuildInfoDtos()));
                 }
                 else
@@ -30,6 +30,17 @@ namespace OrbitOne.BuildScreen.Services
                     Parallel.ForEach(_services, service => allBuilds.AddRange(service.GetBuildInfoDtosPolling(dateString)));
                 }
             }
+            //catch (AggregateException ea)
+            //{
+            //    LogService.WriteInfo("AggregateException");
+            //    LogService.WriteError(ea);
+            //    foreach (var e in ea.InnerExceptions)
+            //    {
+            //        LogService.WriteInfo(e.Message);
+            //        LogService.WriteError(e);               
+            //    }
+            //     throw;
+            //}
             catch (Exception e)
             { 
                 LogService.WriteError(e);

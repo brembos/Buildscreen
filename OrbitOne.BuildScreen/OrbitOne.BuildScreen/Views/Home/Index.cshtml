@@ -49,15 +49,15 @@
                 <div class="page-content">
                     <!-- this is the wrapper for the content -->
                     <div class="page-content-inner">
-                        <div id="menuButton" class="icon-circle"><i class="icon-menu"></i></div>
-                            <div ng-view></div>
-                        </div>
+                        <div id="menuButton" class="icon-circle" style="visibility: visible"><i class="icon-menu"></i></div>
+                        <div ng-view></div>
+                    </div>
                 </div><!-- page-content-inner -->
             </div><!-- page-content -->
         </div>
     </div>
-<!-- SCRIPTS -->
-   @{ Html.RequiresJs("~/Scripts/angular.min.js", 1)
+    <!-- SCRIPTS -->
+    @{ Html.RequiresJs("~/Scripts/angular.min.js", 1)
            .RequiresJs("~/Scripts/angular-animate.min.js", 1)
            .RequiresJs("~/Scripts/angular-route.min.js", 1)
            .RequiresJs("~/Scripts/angular-resource.min.js", 1)
@@ -75,5 +75,14 @@
            .RequiresJsFolder("~/Scripts/App/Services/", 3)
           ;}
     @Html.RenderJsHere()
+    <script type="text/javascript">
+        //setInterval(page_refresh, 5 * 60000); //NOTE: period is passed in milliseconds
+        $(document).ready(function () {
+            //setInterval("location.reload(true)", 10000);
+            setTimeout(function () {
+                alert("Boom!");
+            }, 2000);
+        });
+    </script>
 </body>
 </html>

@@ -17,7 +17,7 @@ namespace OrbitOne.BuildScreen.Services.Tfs
 
         public TfsService(ITfsHelperClass tfsHelperClass)
         {
-           _helperClass = tfsHelperClass;
+            _helperClass = tfsHelperClass;
         }
 
         public List<BuildInfoDto> GetBuildInfoDtos()
@@ -25,7 +25,7 @@ namespace OrbitOne.BuildScreen.Services.Tfs
             var buildInfoDtos = new List<BuildInfoDto>();
             try
             {
-                
+
                 var tfsServer = _helperClass.GetTfsServer();
                 // Get the catalog of team project collections
                 var teamProjectCollectionNodes = tfsServer.CatalogNode.QueryChildren(
@@ -38,13 +38,24 @@ namespace OrbitOne.BuildScreen.Services.Tfs
                     }
                 });
             }
+            catch (AggregateException ea)
+            {
+                LogService.WriteInfo("AggregateException");
+                LogService.WriteError(ea);
+                foreach (var e in ea.InnerExceptions)
+                {
+                    LogService.WriteInfo(e.Message);
+                    LogService.WriteError(e);
+                }
+                throw;
+            }
             catch (Exception e)
             {
                 LogService.WriteError(e);
                 throw;
             }
 
-            return buildInfoDtos;
+            return buildInfoDtos.Where(b => b.TeamProject == "GCT").ToList();
         }
 
         public List<BuildInfoDto> GetBuildInfoDtosPolling(String filterDate)
@@ -96,6 +107,9 @@ namespace OrbitOne.BuildScreen.Services.Tfs
                     new[] { CatalogResourceTypes.TeamProject },
                     false, CatalogQueryOptions.None);
 
+                if (filterDate == DateTime.MinValue)
+                    filterDate = DateTime.Now.AddDays(-14);
+
                 // List the team projects in the collection
                 Parallel.ForEach(teamProjectNodes, teamProjectNode =>
                 {
@@ -132,38 +146,41 @@ namespace OrbitOne.BuildScreen.Services.Tfs
 
                     if (build == null) return;
 
-                    var buildInfoDto = new BuildInfoDto
+                    //if (def.Name.StartsWith("Main -"))
                     {
-                        Builddefinition = def.Name,
-                        FinishBuildDateTime = build.FinishTime,
-                        LastBuildTime = new TimeSpan(),
-                        PassedNumberOfTests = 0,
-                        RequestedByName = build.RequestedFor,
-                        RequestedByPictureUrl = "",
-                        StartBuildDateTime = build.StartTime,
-                        Status = Char.ToLowerInvariant(build.Status.ToString()[0]) + build.Status.ToString().Substring(1),
-                        TeamProject = teamProjectNode.Resource.DisplayName,
-                        TeamProjectCollection = teamProjectCollection.Name,
-                        TotalNumberOfTests = 0,
-                        Id = "TFS" + teamProjectNode.Resource.Identifier + def.Id,
-                        BuildReportUrl = _helperClass.GetReportUrl(teamProjectCollection.Uri.ToString(), teamProjectNode.Resource.DisplayName, build.Uri.OriginalString)
-                    };
-                    //Retrieve testruns
-                    var testResults = GetTestResults(teamProjectNode, testService, build);
+                        var buildInfoDto = new BuildInfoDto
+                        {
+                            Builddefinition = def.Name,
+                            FinishBuildDateTime = build.FinishTime,
+                            LastBuildTime = new TimeSpan(),
+                            PassedNumberOfTests = 0,
+                            RequestedByName = build.RequestedFor,
+                            RequestedByPictureUrl = "",
+                            StartBuildDateTime = build.StartTime,
+                            Status = Char.ToLowerInvariant(build.Status.ToString()[0]) + build.Status.ToString().Substring(1),
+                            TeamProject = teamProjectNode.Resource.DisplayName,
+                            TeamProjectCollection = teamProjectCollection.Name,
+                            TotalNumberOfTests = 0,
+                            Id = "TFS" + teamProjectNode.Resource.Identifier + def.Id,
+                            BuildReportUrl = _helperClass.GetReportUrl(teamProjectCollection.Uri.ToString(), teamProjectNode.Resource.DisplayName, build.Uri.OriginalString)
+                        };
+                        //Retrieve testruns
+                        var testResults = GetTestResults(teamProjectNode, testService, build);
 
-                    if (testResults.ContainsKey("PassedTests"))
-                    {
-                        buildInfoDto.PassedNumberOfTests = testResults["PassedTests"];
-                        buildInfoDto.TotalNumberOfTests = testResults["TotalTests"];
-                    }
-                    //Add last succeeded build if in progress
-                    if (build.Status == BuildStatus.InProgress)
-                    {
-                        buildInfoDto.LastBuildTime = GetLastSuccesfulBuildTime(buildServer, teamProjectNode, def);
-                    }
-                    lock (buildDtos)
-                    {
-                        buildDtos.Add(buildInfoDto);
+                        if (testResults.ContainsKey("PassedTests"))
+                        {
+                            buildInfoDto.PassedNumberOfTests = testResults["PassedTests"];
+                            buildInfoDto.TotalNumberOfTests = testResults["TotalTests"];
+                        }
+                        //Add last succeeded build if in progress
+                        if (build.Status == BuildStatus.InProgress)
+                        {
+                            buildInfoDto.LastBuildTime = GetLastSuccesfulBuildTime(buildServer, teamProjectNode, def);
+                        }
+                        lock (buildDtos)
+                        {
+                            buildDtos.Add(buildInfoDto);
+                        }
                     }
                 });
             }
